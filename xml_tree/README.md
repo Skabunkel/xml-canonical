@@ -18,7 +18,7 @@ Example
   <e2>
     world
   </e2>
-  <e3>
+  <e3></e3>
 </root>
 ```
 
