@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "xml_tree",
+]
+resolver = "3"
