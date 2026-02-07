@@ -1,0 +1,13 @@
+[package]
+name = "xml_tree"
+version = "0.0.0"
+edition = "2024"
+
+[features]
+default = [ "quick_xml" ]  # No default feature
+quick_xml = [ "quick-xml" ]
+xml_rs = [ "xml-rs" ]
+
+[dependencies]
+quick-xml = { version = "0.39.0", optional = true }
+xml-rs = { version = "1.0.0", optional = true }
