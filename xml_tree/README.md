@@ -38,3 +38,19 @@ So the root node would be index 0
 Adding and removing elements in the middle of the tree is inefficient and requiers a bunch of inserts and/or slice operations.
 
 I will probably have to implement some of that when it comes to DTD stuff
+
+## Changes comming.
+
+
+
+After som reading i think need to move the namespaces into the attribute portion of the tags; or atleast add them to each tag.
+
+Why? It seems i have been mistaken about how namespaces work.
+
+they can be defined and redefined as you are going down the tree, and namespaces are only visible in the subtree under their definition. 
+
+- [ ] Move namespaces onto the tags
+- [ ] Add methods to mutate the tree (Needed for canonicolization.)
+
+
+

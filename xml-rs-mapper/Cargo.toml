@@ -1,0 +1,8 @@
+[package]
+name = "xml-rs-mapper"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+xml-rs = { version = "1.0.0" }
+xml_tree = { path = "../xml_tree" }

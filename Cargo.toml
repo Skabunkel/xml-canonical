@@ -1,5 +1,7 @@
 [workspace]
 members = [
     "xml_tree",
+    "qick-xml-mapper",
+    "xml-rs-mapper",
 ]
 resolver = "3"

@@ -9,6 +9,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 
 [[package]]
+name = "qick-xml-mapper"
+version = "0.0.0"
+dependencies = [
+ "quick-xml",
+ "xml_tree",
+]
+
+[[package]]
 name = "quick-xml"
 version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -33,9 +41,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "xml_tree"
+name = "xml-rs-mapper"
 version = "0.0.0"
 dependencies = [
- "quick-xml",
  "xml-rs",
+ "xml_tree",
 ]
+
+[[package]]
+name = "xml_tree"
+version = "0.0.0"

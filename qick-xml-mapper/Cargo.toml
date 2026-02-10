@@ -1,0 +1,8 @@
+[package]
+name = "qick-xml-mapper"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+quick-xml = { version = "0.39.0" }
+xml_tree = { path = "../xml_tree" }

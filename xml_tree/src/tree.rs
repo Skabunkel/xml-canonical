@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 // ── Node types ──────────────────────────────────────────────────────
-
+#[derive(Debug, Clone)]
 pub struct XAttribute {
     pub namespace: Option<u16>,
     pub value: Box<str>,
@@ -11,7 +11,7 @@ pub enum XNode {
     Tag {
         namespace: Option<u16>,
         name: Box<str>,
-        attributes: BTreeMap<Box<str>, XAttribute>,
+        attributes: Option<BTreeMap<Box<str>, XAttribute>>,
     },
     Text(Box<str>),
     Comment(Box<str>),
@@ -27,10 +27,14 @@ pub struct FlatTree {
     nodes: Vec<XNode>,
     /// Parallel to `nodes` – depth of each node. Max 255 levels deep.
     depth: Vec<u8>,
+
     /// Namespace registry: (prefix, uri). Nodes reference by u8 index.
+    // I need to move namespaces up into the nodes :/
     namespaces: Vec<(Box<str>, Box<str>)>,
     namespace_map: BTreeMap<Box<str>, usize>,
 }
+
+// Todo add a flattree iterator so i can go over each node and print them.
 
 impl FlatTree {
     pub fn new() -> Self {
@@ -172,10 +176,10 @@ impl FlatTree {
 
     /// Look up a namespace by its id.
     pub fn get_namespace(&self, id: Option<u16>) -> Option<(&str, &str)> {
-      id?;
+      let id = id?;
 
       self.namespaces
-          .get(id.unwrap() as usize)
+          .get(id as usize)
           .map(|(p, u)| (p.as_ref(), u.as_ref()))
     }
 
@@ -199,6 +203,11 @@ impl Default for FlatTree {
 ///
 /// Navigation is derived purely from the depth array — no stored
 /// parent/child pointers.
+
+// Why is it just an usize? 
+// Well I initally implemented it with a refrence to the source tree.
+// It made the API better to work with but, it also added a bunch of borrows or refrences to the flattree
+// And i did not like how that added alot more lifetime tracking so i removed it.
 #[derive(Debug, Clone)]
 pub struct Node {
     index: usize,
@@ -377,7 +386,7 @@ mod tests {
             XNode::Tag {
                 namespace: None,
                 name: "root".into(),
-                attributes: BTreeMap::new(),
+                attributes: None,
             },
         );
 
@@ -395,7 +404,7 @@ mod tests {
             XNode::Tag {
                 namespace: None,
                 name: "child".into(),
-                attributes: attrs,
+                attributes: Some(attrs),
             },
         );
 
@@ -426,7 +435,7 @@ mod tests {
             XNode::Tag {
                 namespace: None,
                 name: "root1".into(),
-                attributes: BTreeMap::new(),
+                attributes: None,
             },
         );
 
@@ -436,7 +445,7 @@ mod tests {
             XNode::Tag {
                 namespace: None,
                 name: "root2".into(),
-                attributes: BTreeMap::new(),
+                attributes: None,
             },
         );
 
