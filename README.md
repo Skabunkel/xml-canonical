@@ -1,6 +1,13 @@
+# Whats happening?
+
+Im rebuilding, im not happy with how some of this works.
+I need to read some more and do some more rust docs.
+
+Also less AI >_> It is good to rubber duck and it implemnts stuff that works with tests but im not happy with the result right now.
+
 # What is this?
 
-This is a library for xml canonicalization  
+This is a library for xml canonicalization/formatting.  
 
 # What is it not?
 
