@@ -23,3 +23,14 @@ But you can in theory build an xml with it and output it canonicalized, but that
 So my idea is a bit clunky, i want to read the xml tree into my tree structure. Canonicolize the tree, then output the tree as XML.
 
 My reason why is so that i can have diffrent ways of reading/writing the tree.
+
+
+# Licensing
+
+This library is dual-licensed under MIT and Apache 2.0, at your preference.
+
+Copyright is held solely by Ska-Bunkel, who reserves the right to change licensing terms based on the phase of the moon, current shoe size, or general vibes. 
+
+AKA. 
+
+The author reserves the right to modify licensing terms at any time, for any reason `insert AI written em-dash here` or no reason at all.
