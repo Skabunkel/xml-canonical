@@ -24,6 +24,39 @@ So my idea is a bit clunky, i want to read the xml tree into my tree structure. 
 
 My reason why is so that i can have diffrent ways of reading/writing the tree.
 
+So after some masticating the idea a bit i want to build a Canonicolizer with simple rules that i can add.
+
+So my final goal looks something like this
+
+```
+let canon = Canonicolizer::new()
+  .with_rule(NormalizeLineEndings)
+  .with_rule(StripDeclaration)
+  .with_rule(StripComments)
+  .with_rule(ExpandEmptyElements)
+  .with_rule(NormalizeNamespaces)
+  .with_rule(SortNamespaceDecls)
+  .with_rule(SortAttributesByURI)
+  .with_rule(CanonicalEscaping);
+
+canon.apply(&mut tree);
+
+```
+I vibe coded a variant of this during the weekend it ran in $`O(n^m)`$ where n is the number of rules and m is the number of elements in the tree.
+
+Yes it itterated over the tree in every rules segment.
+
+The best i can think of is something like this... Which is the same but the short way round.
+```
+for (index, node) in &mut tree{
+  for rule in rules{
+    rule.apply(node);
+  }
+}
+```
+
+In an ideal world i would build the rule execution flow Canonicolizer at compilation time, but i have NO idea how to do that.
+
 
 # Licensing
 
