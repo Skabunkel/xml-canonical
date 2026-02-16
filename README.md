@@ -40,7 +40,6 @@ let canon = Canonicolizer::new()
   .with_rule(CanonicalEscaping);
 
 canon.apply(&mut tree);
-
 ```
 I vibe coded a variant of this during the weekend it ran in $`O(n^m)`$ where n is the number of rules and m is the number of elements in the tree.
 
@@ -55,8 +54,7 @@ for (index, node) in &mut tree{
 }
 ```
 
-In an ideal world i would build the rule execution flow Canonicolizer at compilation time, but i have NO idea how to do that.
-
+In an ideal world i would build the rule execution flow of the Canonicolizer at compilation time, but i have NO idea how to do that.
 
 # Licensing
 
