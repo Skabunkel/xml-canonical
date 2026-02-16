@@ -28,7 +28,7 @@ So after some masticating the idea a bit i want to build a Canonicolizer with si
 
 So my final goal looks something like this
 
-```
+```rust
 let canon = Canonicolizer::new()
   .with_rule(NormalizeLineEndings)
   .with_rule(StripDeclaration)
@@ -46,7 +46,7 @@ I vibe coded a variant of this during the weekend it ran in $`O(n^m)`$ where n i
 Yes it itterated over the tree in every rules segment.
 
 The best i can think of is something like this... Which is the same but the short way round.
-```
+```rust
 for (index, node) in &mut tree{
   for rule in rules{
     rule.apply(node);
