@@ -56,6 +56,9 @@ for (index, node) in &mut tree{
 
 In an ideal world i would build the rule execution flow of the Canonicolizer at compilation time, but i have NO idea how to do that.
 
+# Todo
+* [ ] Get good at rust documentation
+
 # Licensing
 
 This library is dual-licensed under MIT and Apache 2.0, at your preference.
