@@ -3,5 +3,12 @@
 version = 4
 
 [[package]]
+name = "flat-tree"
+version = "0.0.0"
+
+[[package]]
 name = "xml-canonical"
 version = "0.1.0"
+dependencies = [
+ "flat-tree",
+]

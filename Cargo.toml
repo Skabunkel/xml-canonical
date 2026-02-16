@@ -4,3 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+flat-tree = { path="./flat-tree" }
+
+[workspace]
+members = [
+    "flat-tree",
+]
+resolver = "3"
