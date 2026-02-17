@@ -28,7 +28,7 @@ pub struct XNamespace {
 pub enum XNode {
   Tag {
     prefix: Option<Box<str>>,
-    local_name: Box<str>,
+    name: Box<str>,
     attributes: Option<Vec<XAttribute>>,
     namespaces: Option<Vec<XNamespace>>,
   },
