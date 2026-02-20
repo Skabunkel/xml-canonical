@@ -7,11 +7,13 @@ use std::{iter::Zip, ops::Range, slice::Iter};
 /// If i ever change this to a u16 or something i want to do that once.<br/>
 /// As of right now i only support 0-255 in depth.
 pub type Depth = u8;
+// I should probably remove this.
 pub struct Node(usize);
 
 /// A simple tuple for a node and depth pair.
 pub type FlatNode = (XNode, Depth);
 pub type FlatNodeRef<'a> = (&'a XNode, &'a Depth);
+pub type FlatNodeMutRef<'a> = (&'a mut XNode, &'a mut Depth);
 
 #[derive(Default)]
 pub struct FlatTree {
@@ -58,11 +60,13 @@ impl FlatTree {
     }
   }
 
+  /// Appends to the end of the tree.
   pub fn push(&mut self, node: FlatNode) {
     self.nodes.push(node.0);
     self.depth.push(node.1);
   }
 
+  /// Removes from the end of the tree.
   pub fn pop(&mut self) -> Option<FlatNode> {
     let node = self.nodes.pop()?;
     let depth = self.depth.pop()?;
@@ -70,21 +74,37 @@ impl FlatTree {
     Some((node, depth))
   }
 
-  pub fn insert(&mut self, index: usize, node: FlatNode) {
-    self.nodes.insert(index, node.0);
-    self.depth.insert(index, node.1);
+  /// Creats a node iterator for those cases we want to work with nodes in the tree based on index<br/>
+  /// Example: has_children(); or when we want to mutate them inplace.
+  pub fn enumerator(&self) -> impl Iterator<Item = usize> {
+    0..self.nodes.len()
   }
 
-  pub fn remove(&mut self, index: usize) -> FlatNode {
+  /// Inserts at node index, pushing the node at index forward.
+  pub fn insert(&mut self, index: usize, node: FlatNode) -> bool {
+    if index > self.nodes.len() {
+      return false;
+    }
+
+    self.nodes.insert(index, node.0);
+    self.depth.insert(index, node.1);
+    true
+  }
+
+  /// Removes at node index.<br/>
+  pub fn remove(&mut self, index: usize) -> Option<FlatNode> {
+    if index > self.nodes.len() - 1 {
+      return None;
+    }
+
     let node = self.nodes.remove(index);
     let depth = self.depth.remove(index);
 
-    (node, depth)
+    Some((node, depth))
   }
 
   pub fn to_node_builder(&self) -> Node {
     let len = self.nodes.len();
-
     Node(len)
   }
 
@@ -102,8 +122,30 @@ impl FlatTree {
     Some((node, depth))
   }
 
+  pub fn get_mut(&mut self, index: usize) -> Option<FlatNodeMutRef<'_>> {
+    if self.nodes.is_empty() {
+      return None;
+    }
+    let depth = self.depth.get_mut(index)?;
+    let node = self.nodes.get_mut(index)?;
+
+    Some((node, depth))
+  }
+
   pub fn len(&self) -> usize {
     self.nodes.len()
+  }
+
+  /// None if the current node does not exist.<br/>
+  ///
+  pub fn has_children(&self, index: usize) -> Option<bool> {
+    let depth = self.depth.get(index)?;
+    let neigbor_depth = self.depth.get(index + 1);
+
+    match neigbor_depth {
+      Some(ndepth) => Some(ndepth > depth),
+      None => Some(false),
+    }
   }
 }
 
@@ -121,7 +163,7 @@ mod tests {
   }
 
   #[test]
-  fn tree_iterator() {
+  fn tree_ref_iterator() {
     let tree = test_data();
 
     let mut looped = false;
@@ -132,14 +174,192 @@ mod tests {
   }
 
   #[test]
-  fn tree_ref_iterator() {
+  fn tree_enumerator() {
     let tree = test_data();
 
     let mut looped = false;
-    for _flat_node in &tree {
+    for _flat_node in tree.enumerator() {
       looped = true;
     }
     assert!(looped);
+  }
+
+  #[test]
+  fn has_children_false() {
+    let tree = test_data();
+
+    let has_child = tree.has_children(0);
+
+    assert!(has_child.is_some());
+    assert!(!has_child.unwrap());
+  }
+
+  #[test]
+  fn has_children_false_end() {
+    let tree = test_data();
+    let len = tree.len() - 1;
+
+    let has_child = tree.has_children(len);
+
+    assert!(has_child.is_some());
+    assert!(!has_child.unwrap());
+  }
+
+  #[test]
+  fn has_children_true() {
+    let tree = test_data();
+
+    let has_child = tree.has_children(3);
+
+    assert!(has_child.is_some());
+    assert!(has_child.unwrap());
+  }
+
+  #[test]
+  fn has_children_none() {
+    let tree = test_data();
+    let len = tree.len();
+
+    let has_child = tree.has_children(len);
+
+    assert!(has_child.is_none());
+  }
+
+  #[test]
+  fn length_match_0() {
+    let tree = FlatTree::default();
+
+    let len = tree.len();
+    assert_eq!(0, len);
+    assert_eq!(tree.nodes.len(), len);
+    assert_eq!(tree.depth.len(), len);
+  }
+
+  #[test]
+  fn length_match_1() {
+    let mut tree = FlatTree::default();
+    tree.push((
+      XNode::Declaration {
+        version: "1.0".into(),
+        encoding: None,
+        standalone: None,
+      },
+      0,
+    ));
+
+    let len = tree.len();
+    assert_eq!(1, len);
+    assert_eq!(tree.nodes.len(), len);
+    assert_eq!(tree.depth.len(), len);
+  }
+
+  #[test]
+  fn length_match_2() {
+    let tree = test_data();
+
+    let len = tree.len();
+    assert_eq!(tree.nodes.len(), len);
+    assert_eq!(tree.depth.len(), len);
+  }
+
+  #[test]
+  fn pop() {
+    let mut tree = test_data();
+    let original_len = tree.len();
+    let last_node = tree.get(original_len - 1);
+    assert!(last_node.is_some());
+    let last_node = last_node.unwrap();
+
+    let last_depth = *last_node.1;
+    let last_node = last_node.0.clone();
+
+    let pop_node = tree.pop();
+
+    let len = tree.len();
+
+    assert_ne!(original_len, len);
+    assert_eq!(original_len - 1, len);
+    assert_eq!(tree.depth.len(), len);
+    assert_eq!(tree.nodes.len(), len);
+    assert!(pop_node.is_some());
+    let pop_node = pop_node.unwrap();
+
+    assert_eq!(last_depth, pop_node.1);
+    assert_eq!(last_node, pop_node.0);
+  }
+
+  #[test]
+  fn remove_success() {
+    let mut tree = test_data();
+    let original_len = tree.len();
+    let last_node = tree.get(0);
+    assert!(last_node.is_some());
+    let last_node = last_node.unwrap();
+
+    let last_depth = *last_node.1;
+    let last_node = last_node.0.clone();
+
+    let remove_node = tree.remove(0);
+    assert!(remove_node.is_some());
+    let remove_node = remove_node.unwrap();
+
+    let len = tree.len();
+
+    assert_ne!(original_len, len);
+    assert_eq!(original_len - 1, len);
+    assert_eq!(tree.depth.len(), len);
+    assert_eq!(tree.nodes.len(), len);
+
+    assert_eq!(last_depth, remove_node.1);
+    assert_eq!(last_node, remove_node.0);
+  }
+
+  #[test]
+  fn remove_fail() {
+    let mut tree = test_data();
+    let remove_node = tree.remove(tree.len());
+    assert!(remove_node.is_none());
+  }
+
+  #[test]
+  fn remove_success_last() {
+    let mut tree = test_data();
+    let remove_node = tree.remove(tree.len() - 1);
+    assert!(remove_node.is_some());
+  }
+
+  #[test]
+  fn insert_success_last() {
+    let mut tree = test_data();
+    let insert_node = tree.insert(
+      tree.len(),
+      (
+        XNode::Declaration {
+          version: "1.0".into(),
+          encoding: None,
+          standalone: None,
+        },
+        0,
+      ),
+    );
+    assert!(insert_node);
+  }
+
+  #[test]
+  fn insert_fail() {
+    let mut tree = test_data();
+    let insert_node = tree.insert(
+      tree.len() + 1,
+      (
+        XNode::Declaration {
+          version: "1.0".into(),
+          encoding: None,
+          standalone: None,
+        },
+        0,
+      ),
+    );
+    assert!(!insert_node);
   }
 
   fn test_data() -> FlatTree {
@@ -181,7 +401,7 @@ mod tests {
       },
       1,
     ));
-    // <!--this is a comment-->
+    // <!--this is {a comment-->
     tree.push((XNode::Comment("this is a comment".into()), 2));
 
     // <node>
