@@ -2,3 +2,4 @@
 
 pub mod elements;
 pub mod flat_tree;
+pub mod flat_tree_slice;

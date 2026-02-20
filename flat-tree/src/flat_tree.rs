@@ -1,6 +1,6 @@
 //! This is a [pre-orderd tree](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR) of xml elements.
 
-use crate::elements::XNode;
+use crate::{elements::XNode, flat_tree_slice::FlatTreeSlice};
 use std::{iter::Zip, ops::Range, slice::Iter};
 
 /// A simple depth type definition for easy future changes<br/>
@@ -8,7 +8,7 @@ use std::{iter::Zip, ops::Range, slice::Iter};
 /// As of right now i only support 0-255 in depth.
 pub type Depth = u8;
 // I should probably remove this.
-pub struct Node(usize);
+//pub struct Node(usize);
 
 /// A simple tuple for a node and depth pair.
 pub type FlatNode = (XNode, Depth);
@@ -21,22 +21,7 @@ pub struct FlatTree {
   depth: Vec<Depth>,
 }
 
-// I want the ability to canonicolize sub-trees
-pub struct FlatTreeSlice<'a> {
-  nodes: &'a [XNode],
-  depth: &'a [Depth],
-}
-
 impl<'a> IntoIterator for &'a FlatTree {
-  type Item = FlatNodeRef<'a>;
-  type IntoIter = Zip<Iter<'a, XNode>, Iter<'a, Depth>>;
-
-  fn into_iter(self) -> Self::IntoIter {
-    self.nodes.iter().zip(self.depth.iter())
-  }
-}
-
-impl<'a> IntoIterator for &'a FlatTreeSlice<'a> {
   type Item = FlatNodeRef<'a>;
   type IntoIter = Zip<Iter<'a, XNode>, Iter<'a, Depth>>;
 
@@ -101,11 +86,6 @@ impl FlatTree {
     let depth = self.depth.remove(index);
 
     Some((node, depth))
-  }
-
-  pub fn to_node_builder(&self) -> Node {
-    let len = self.nodes.len();
-    Node(len)
   }
 
   pub fn is_empty(&self) -> bool {
