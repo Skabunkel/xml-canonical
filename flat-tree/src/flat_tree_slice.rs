@@ -1,3 +1,5 @@
+//! Represents a subtree of an existing flat_tree
+
 use crate::{
   elements::XNode,
   flat_tree::{Depth, FlatNodeRef},

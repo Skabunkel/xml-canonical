@@ -5,6 +5,9 @@ version = 4
 [[package]]
 name = "canonicalizer"
 version = "0.0.0"
+dependencies = [
+ "flat-tree",
+]
 
 [[package]]
 name = "flat-tree"
