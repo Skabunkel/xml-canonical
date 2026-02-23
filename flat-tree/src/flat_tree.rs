@@ -59,7 +59,7 @@ impl FlatTree {
     Some((node, depth))
   }
 
-  /// Creats a node iterator for those cases we want to work with nodes in the tree based on index<br/>
+  /// Creates a node iterator for those cases we want to work with nodes in the tree based on index<br/>
   /// Example: has_children(); or when we want to mutate them inplace.
   pub fn enumerator(&self) -> impl Iterator<Item = usize> {
     0..self.nodes.len()
@@ -117,7 +117,7 @@ impl FlatTree {
   }
 
   /// None if the current node does not exist.<br/>
-  ///
+  /// True if it does and false if it dosnt or the its the last node.
   pub fn has_children(&self, index: usize) -> Option<bool> {
     let depth = self.depth.get(index)?;
     let neigbor_depth = self.depth.get(index + 1);
