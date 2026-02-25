@@ -11,5 +11,7 @@ canonicalizer = { path="./canonicalizer" }
 members = [
     "flat-tree",
     "canonicalizer",
+    "quick-xml-serializer",
+    "xml-rs-serializer",
 ]
 resolver = "3"

@@ -76,6 +76,7 @@ mod tests {
   #[test]
   fn node_depth_test() {
     let tree = test_data();
+    let tree = tree.as_slice();
     let expected_depth: Vec<u8> = vec![0, 0, 1, 1, 2, 1, 2, 1, 2, 1, 2, 3];
     let depth_vector: Vec<u8> = tree.into_iter().map(|x| *x.1).collect();
 
@@ -85,6 +86,7 @@ mod tests {
   #[test]
   fn tree_ref_iterator() {
     let tree = test_data();
+    let tree = tree.as_slice();
 
     let mut looped = false;
     for _flat_node in &tree {
@@ -96,6 +98,7 @@ mod tests {
   #[test]
   fn tree_enumerator() {
     let tree = test_data();
+    let tree = tree.as_slice();
 
     let mut looped = false;
     for _flat_node in tree.enumerator() {
@@ -107,6 +110,7 @@ mod tests {
   #[test]
   fn has_children_false() {
     let tree = test_data();
+    let tree = tree.as_slice();
 
     let has_child = tree.has_children(0);
 
@@ -117,6 +121,7 @@ mod tests {
   #[test]
   fn has_children_false_end() {
     let tree = test_data();
+    let tree = tree.as_slice();
     let len = tree.len() - 1;
 
     let has_child = tree.has_children(len);
@@ -128,6 +133,7 @@ mod tests {
   #[test]
   fn has_children_true() {
     let tree = test_data();
+    let tree = tree.as_slice();
 
     let has_child = tree.has_children(3);
 
@@ -138,6 +144,7 @@ mod tests {
   #[test]
   fn has_children_none() {
     let tree = test_data();
+    let tree = tree.as_slice();
     let len = tree.len();
 
     let has_child = tree.has_children(len);
@@ -179,13 +186,14 @@ mod tests {
   #[test]
   fn length_match_2() {
     let tree = test_data();
+    let tree = tree.as_slice();
 
     let len = tree.len();
     assert_eq!(tree.nodes.len(), len);
     assert_eq!(tree.depth.len(), len);
   }
 
-  fn test_data() -> FlatTreeSlice<'static> {
+  fn test_data() -> FlatTree {
     let mut tree = FlatTree::default();
 
     //let root = tree.to_node_builder();
@@ -276,6 +284,6 @@ mod tests {
 
     // text3
     tree.push((XNode::Text("text3".into()), 3));
-    tree.as_slice()
+    tree
   }
 }

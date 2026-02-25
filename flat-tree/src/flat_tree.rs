@@ -15,7 +15,7 @@ pub type FlatNode = (XNode, Depth);
 pub type FlatNodeRef<'a> = (&'a XNode, &'a Depth);
 pub type FlatNodeMutRef<'a> = (&'a mut XNode, &'a mut Depth);
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct FlatTree {
   nodes: Vec<XNode>,
   depth: Vec<Depth>,
@@ -31,6 +31,10 @@ impl<'a> IntoIterator for &'a FlatTree {
 }
 
 impl FlatTree {
+  pub fn new() -> Self {
+    Self::default()
+  }
+
   pub fn as_slice(&self) -> FlatTreeSlice<'_> {
     FlatTreeSlice {
       nodes: &self.nodes[..],

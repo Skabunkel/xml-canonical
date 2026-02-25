@@ -54,6 +54,8 @@ for (index, node) in &mut tree{
 }
 ```
 
+This might not work as i wanted -_-, if i want to implement a rule for merging CDATA or text into 1 element then this rule would need to look at elements infron of it and merge it with the current one.
+
 In an ideal world i would build the rule execution flow of the Canonicolizer at compilation time, but i have NO idea how to do that.
 
 # Todo
