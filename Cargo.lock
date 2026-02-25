@@ -48,6 +48,7 @@ version = "0.1.0"
 dependencies = [
  "canonicalizer",
  "flat-tree",
+ "quick-xml-serializer",
 ]
 
 [[package]]

@@ -3,8 +3,12 @@ name = "xml-canonical"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+quick-serial = ["dep:quick-xml-serializer"]
+
 [dependencies]
 flat-tree = { path="./flat-tree" }
+quick-xml-serializer = { path="./quick-xml-serializer", optional = true }
 canonicalizer = { path="./canonicalizer" }
 
 [workspace]

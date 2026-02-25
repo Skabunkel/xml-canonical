@@ -1,0 +1,8 @@
+[package]
+name = "xml-rs-seralizer"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+xml = "1.2.1"
+flat-tree = { path = "../flat-tree" }
