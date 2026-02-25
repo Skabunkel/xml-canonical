@@ -41,3 +41,19 @@ fn declaration() {
   let xml = r#"<?xml version="1.0" encoding="UTF-8"?><root/>"#;
   assert_eq!(round_trip(xml), xml);
 }
+
+#[test]
+fn formatted() {
+  let xml = r#"<doc>
+   <clean>   </clean>
+   <dirty>   A   B   </dirty>
+   <mixed>
+      A
+      <clean>   </clean>
+      B
+      <dirty>   A   B   </dirty>
+      C
+   </mixed>
+</doc>"#;
+  assert_eq!(round_trip(xml), xml);
+}

@@ -60,6 +60,7 @@ In an ideal world i would build the rule execution flow of the Canonicolizer at 
 
 # Todo
 * [ ] Get good at rust documentation
+* [ ] Change XNamespace into an attribute, right now we cant reproduce out of order namespace declarations. eg `<root spoon="asd" xmlns="asds">`
 
 # Licensing
 
