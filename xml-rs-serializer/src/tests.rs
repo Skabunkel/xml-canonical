@@ -37,6 +37,18 @@ fn nested_namespaces() {
 }
 
 #[test]
+fn attributes_namespace_out_of_order() {
+  let xml = r#"<a attr="asd" xmlns="http://a"><b xmlns:x="http://x"><x:c/></b></a>"#;
+  assert_eq!(round_trip(xml), xml);
+}
+
+#[test]
+fn attributes_namespace_in_of_order() {
+  let xml = r#"<a xmlns="http://a" attr="asd"><b xmlns:x="http://x"><x:c/></b></a>"#;
+  assert_eq!(round_trip(xml), xml);
+}
+
+#[test]
 fn declaration() {
   let xml = r#"<?xml version="1.0" encoding="UTF-8"?><root/>"#;
   assert_eq!(round_trip(xml), xml);

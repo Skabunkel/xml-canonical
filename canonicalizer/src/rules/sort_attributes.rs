@@ -15,7 +15,14 @@ impl Rule for SortAttributes {
     let scope_map = build_scope_map(tree);
 
     for (i, scope) in scope_map.iter().enumerate() {
-      if let Some((XNode::Tag { decorator: Some(decs), .. }, _)) = tree.get_mut(i) {
+      if let Some((
+        XNode::Tag {
+          decorator: Some(decs),
+          ..
+        },
+        _,
+      )) = tree.get_mut(i)
+      {
         // Sort only the XAttribute entries among themselves
         let mut attr_indices: Vec<usize> = decs
           .iter()
@@ -25,11 +32,15 @@ impl Rule for SortAttributes {
 
         attr_indices.sort_by(|&a_idx, &b_idx| {
           let (a_prefix, a_local) = match &decs[a_idx] {
-            XDecorator::XAttribute { prefix, local_name, .. } => (prefix, local_name),
+            XDecorator::XAttribute {
+              prefix, local_name, ..
+            } => (prefix, local_name),
             _ => unreachable!(),
           };
           let (b_prefix, b_local) = match &decs[b_idx] {
-            XDecorator::XAttribute { prefix, local_name, .. } => (prefix, local_name),
+            XDecorator::XAttribute {
+              prefix, local_name, ..
+            } => (prefix, local_name),
             _ => unreachable!(),
           };
 
@@ -47,7 +58,8 @@ impl Rule for SortAttributes {
         });
 
         // Apply the sorted order by rebuilding the vec
-        let sorted_attrs: Vec<XDecorator> = attr_indices.iter().map(|&idx| decs[idx].clone()).collect();
+        let sorted_attrs: Vec<XDecorator> =
+          attr_indices.iter().map(|&idx| decs[idx].clone()).collect();
         let mut sorted_idx = 0;
         for d in decs.iter_mut() {
           if matches!(d, XDecorator::XAttribute { .. }) {
@@ -84,7 +96,11 @@ fn build_scope_map(tree: &FlatTree) -> Vec<HashMap<String, String>> {
         let parent_scope = current_scope.clone();
         if let Some(decs) = decorator {
           for dec in decs {
-            if let XDecorator::XNamespace { sufix: Some(prefix), value } = dec {
+            if let XDecorator::XNamespace {
+              sufix: Some(prefix),
+              value,
+            } = dec
+            {
               current_scope.insert(prefix.to_string(), value.to_string());
             }
           }
@@ -114,20 +130,20 @@ mod tests {
         name: "root".into(),
         decorator: Some(vec![
           XDecorator::XNamespace {
-            sufix: Some("a".into()),
+            sufix: Some("ns1".into()),
             value: "http://aaa".into(),
           },
           XDecorator::XNamespace {
-            sufix: Some("b".into()),
+            sufix: Some("ns2".into()),
             value: "http://bbb".into(),
           },
           XDecorator::XAttribute {
-            prefix: Some("b".into()),
+            prefix: Some("ns2".into()),
             local_name: "attr1".into(),
             value: "1".into(),
           },
           XDecorator::XAttribute {
-            prefix: Some("a".into()),
+            prefix: Some("ns1".into()),
             local_name: "attr2".into(),
             value: "2".into(),
           },
@@ -143,15 +159,22 @@ mod tests {
 
     SortAttributes.apply(&mut tree);
 
-    if let Some((XNode::Tag { decorator: Some(decs), .. }, _)) = tree.get(0) {
+    if let Some((
+      XNode::Tag {
+        decorator: Some(decs),
+        ..
+      },
+      _,
+    )) = tree.get(0)
+    {
       let attrs: Vec<_> = decs
         .iter()
-        .filter_map(|d| match d {
-          XDecorator::XAttribute { local_name, .. } => Some(&**local_name),
-          _ => None,
+        .map(|d| match d {
+          XDecorator::XAttribute { local_name, .. } => local_name.as_ref(),
+          XDecorator::XNamespace { sufix, .. } => sufix.as_deref().unwrap(),
         })
         .collect();
-      assert_eq!(attrs, vec!["local", "attr2", "attr1"]); // "" < "http://aaa" < "http://bbb"
+      assert_eq!(attrs, vec!["ns1", "ns2", "local", "attr2", "attr1"]); // "" < "http://aaa" < "http://bbb"
     } else {
       panic!("expected tag");
     }
@@ -182,7 +205,14 @@ mod tests {
 
     SortAttributes.apply(&mut tree);
 
-    if let Some((XNode::Tag { decorator: Some(decs), .. }, _)) = tree.get(0) {
+    if let Some((
+      XNode::Tag {
+        decorator: Some(decs),
+        ..
+      },
+      _,
+    )) = tree.get(0)
+    {
       let attrs: Vec<_> = decs
         .iter()
         .filter_map(|d| match d {
@@ -232,7 +262,14 @@ mod tests {
 
     SortAttributes.apply(&mut tree);
 
-    if let Some((XNode::Tag { decorator: Some(decs), .. }, _)) = tree.get(1) {
+    if let Some((
+      XNode::Tag {
+        decorator: Some(decs),
+        ..
+      },
+      _,
+    )) = tree.get(1)
+    {
       let attrs: Vec<_> = decs
         .iter()
         .filter_map(|d| match d {

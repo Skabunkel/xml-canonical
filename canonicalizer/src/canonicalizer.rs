@@ -37,16 +37,14 @@ impl Canonicalizer {
   pub fn c14n(with_comments: bool) -> Self {
     use crate::rules::*;
 
-    let mut c = Self::new()
-      .with_rule(StripDeclaration)
-      .with_rule(NormalizeLineEndings);
-
+    let mut c = Self::new();
     if !with_comments {
       c = c.with_rule(StripComments);
     }
-
-    c.with_rule(SortAttributes)
+    c.with_rule(StripDeclaration)
+      .with_rule(NormalizeLineEndings)
       .with_rule(StripRedundantNamespaces)
+      .with_rule(SortAttributes)
       .with_rule(SortNamespaces)
       .with_rule(ExpandEmptyElements)
   }
@@ -55,16 +53,14 @@ impl Canonicalizer {
   pub fn exc_c14n(with_comments: bool, prefix_list: Vec<String>) -> Self {
     use crate::rules::*;
 
-    let mut c = Self::new()
-      .with_rule(StripDeclaration)
-      .with_rule(NormalizeLineEndings);
-
+    let mut c = Self::new();
     if !with_comments {
       c = c.with_rule(StripComments);
     }
-
-    c.with_rule(SortAttributes)
+    c.with_rule(StripDeclaration)
+      .with_rule(NormalizeLineEndings)
       .with_rule(VisiblyUtilizedNamespaces::new(prefix_list))
+      .with_rule(SortAttributes)
       .with_rule(SortNamespaces)
       .with_rule(ExpandEmptyElements)
   }
