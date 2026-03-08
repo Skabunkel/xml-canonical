@@ -36,8 +36,7 @@ mod tests {
       XNode::Tag {
         prefix: None,
         name: "root".into(),
-        attributes: None,
-        namespaces: None,
+        decorator: None,
       },
       0,
     ));
@@ -55,8 +54,7 @@ mod tests {
       XNode::Tag {
         prefix: None,
         name: "root".into(),
-        attributes: None,
-        namespaces: None,
+        decorator: None,
       },
       0,
     ));
