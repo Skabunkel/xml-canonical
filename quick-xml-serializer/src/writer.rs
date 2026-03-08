@@ -106,7 +106,7 @@ fn write_tag<W: Write>(
           local_name,
           value,
         } => {
-          let name = make_qname(&prefix, &local_name);
+          let name = make_qname(prefix, local_name);
           element.push_attribute((name.as_str(), value.as_ref()));
         }
         flat_tree::elements::XDecorator::XNamespace { sufix, value } => match sufix {
