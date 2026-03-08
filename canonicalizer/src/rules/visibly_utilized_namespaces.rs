@@ -1,6 +1,6 @@
 use crate::canonicalizer::Rule;
 use flat_tree::{
-  elements::{XNamespace, XNode},
+  elements::{XDecorator, XNode},
   flat_tree::{Depth, FlatTree},
 };
 use std::collections::{HashMap, HashSet};
@@ -10,8 +10,8 @@ use std::collections::{HashMap, HashSet};
 /// Supports InclusiveNamespaces PrefixList for forcing additional prefixes.
 ///
 /// Uses dual scope tracking:
-/// - Input scope: prefix→URI bindings from the original (input) tree
-/// - Output scope: prefix→URI bindings that have actually been emitted
+/// - Input scope: prefix->URI bindings from the original (input) tree
+/// - Output scope: prefix->URI bindings that have actually been emitted
 ///
 /// If an element uses a prefix that's in the input scope but not in the
 /// output scope, we add the declaration to the element.
@@ -29,7 +29,7 @@ impl VisiblyUtilizedNamespaces {
 
 impl Rule for VisiblyUtilizedNamespaces {
   fn apply(&self, tree: &mut FlatTree) {
-    // First pass: build input scope map (prefix→URI at each Tag node index)
+    // First pass: build input scope map (prefix->URI at each Tag node index)
     let input_scopes = build_input_scopes(tree);
 
     // Second pass: process each tag, keeping only visibly utilized ns decls
@@ -55,10 +55,7 @@ impl Rule for VisiblyUtilizedNamespaces {
 
       if let Some((
         XNode::Tag {
-          prefix,
-          namespaces,
-          attributes,
-          ..
+          prefix, decorator, ..
         },
         _,
       )) = tree.get_mut(i)
@@ -69,11 +66,14 @@ impl Rule for VisiblyUtilizedNamespaces {
         // Element's own prefix
         utilized.insert(prefix.as_deref().map(|s| s.to_string()));
 
-        // Attribute prefixes (only prefixed attributes — unprefixed attrs are
+        // Attribute prefixes (only prefixed attributes -- unprefixed attrs are
         // NOT in any namespace per the XML Namespaces spec)
-        if let Some(attrs) = attributes {
-          for attr in attrs.iter() {
-            if let Some(p) = &attr.prefix {
+        if let Some(decs) = decorator.as_ref() {
+          for dec in decs {
+            if let XDecorator::XAttribute {
+              prefix: Some(p), ..
+            } = dec
+            {
               utilized.insert(Some(p.to_string()));
             }
           }
@@ -91,26 +91,37 @@ impl Rule for VisiblyUtilizedNamespaces {
         let parent_output = output_scope.clone();
 
         // Build the new namespace list: only utilized prefixes
-        let mut new_ns: Vec<XNamespace> = Vec::new();
+        let mut new_ns: Vec<XDecorator> = Vec::new();
 
         for prefix_key in &utilized {
           // Look up the URI in the input scope
           if let Some(uri) = input_scope.get(prefix_key) {
             // Check if already in output scope with same URI
-            let already_output =
-              output_scope.get(prefix_key).map(|u| u == uri).unwrap_or(false);
+            let already_output = output_scope
+              .get(prefix_key)
+              .map(|u| u == uri)
+              .unwrap_or(false);
 
             if !already_output {
-              new_ns.push(XNamespace {
-                prefix: prefix_key.as_deref().map(|s| s.into()),
-                uri: uri.clone().into(),
+              new_ns.push(XDecorator::XNamespace {
+                sufix: prefix_key.as_deref().map(|s| s.into()),
+                value: uri.clone().into(),
               });
               output_scope.insert(prefix_key.clone(), uri.clone());
             }
           }
         }
 
-        *namespaces = if new_ns.is_empty() { None } else { Some(new_ns) };
+        // Keep existing attributes, replace namespaces
+        if let Some(decs) = decorator {
+          decs.retain(|d| matches!(d, XDecorator::XAttribute { .. }));
+          decs.extend(new_ns);
+          if decs.is_empty() {
+            *decorator = None;
+          }
+        } else if !new_ns.is_empty() {
+          *decorator = Some(new_ns);
+        }
 
         output_stack.push((depth, parent_output));
       }
@@ -118,7 +129,7 @@ impl Rule for VisiblyUtilizedNamespaces {
   }
 }
 
-/// Build input scope map: for each node index, the full prefix→URI bindings
+/// Build input scope map: for each node index, the full prefix->URI bindings
 /// inherited from ancestors plus the node's own declarations.
 fn build_input_scopes(tree: &FlatTree) -> Vec<HashMap<Option<String>, String>> {
   let len = tree.len();
@@ -139,12 +150,14 @@ fn build_input_scopes(tree: &FlatTree) -> Vec<HashMap<Option<String>, String>> {
         }
       }
 
-      if let XNode::Tag { namespaces, .. } = node {
+      if let XNode::Tag { decorator, .. } = node {
         let parent = current.clone();
-        if let Some(ns_list) = namespaces {
-          for ns in ns_list {
-            let key = ns.prefix.as_deref().map(|s| s.to_string());
-            current.insert(key, ns.uri.to_string());
+        if let Some(decs) = decorator {
+          for dec in decs {
+            if let XDecorator::XNamespace { sufix, value } = dec {
+              let key = sufix.as_deref().map(|s| s.to_string());
+              current.insert(key, value.to_string());
+            }
           }
         }
         scope_stack.push((depth, parent));
@@ -162,7 +175,6 @@ fn build_input_scopes(tree: &FlatTree) -> Vec<HashMap<Option<String>, String>> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use flat_tree::elements::{XAttribute, XNamespace};
 
   #[test]
   fn keeps_utilized_removes_unused() {
@@ -171,15 +183,14 @@ mod tests {
       XNode::Tag {
         prefix: None,
         name: "root".into(),
-        attributes: None,
-        namespaces: Some(vec![
-          XNamespace {
-            prefix: Some("used".into()),
-            uri: "http://used".into(),
+        decorator: Some(vec![
+          XDecorator::XNamespace {
+            sufix: Some("used".into()),
+            value: "http://used".into(),
           },
-          XNamespace {
-            prefix: Some("unused".into()),
-            uri: "http://unused".into(),
+          XDecorator::XNamespace {
+            sufix: Some("unused".into()),
+            value: "http://unused".into(),
           },
         ]),
       },
@@ -189,25 +200,38 @@ mod tests {
       XNode::Tag {
         prefix: Some("used".into()),
         name: "child".into(),
-        attributes: None,
-        namespaces: None,
+        decorator: None,
       },
       1,
     ));
 
     VisiblyUtilizedNamespaces::new(vec![]).apply(&mut tree);
 
-    // Root: no element prefix used, no attribute prefixes → no ns needed
-    // (root has no prefix, so default ns not utilized unless prefix is None AND there's a binding)
-    if let Some((XNode::Tag { namespaces, .. }, _)) = tree.get(0) {
-      assert!(namespaces.is_none());
+    // Root: no element prefix used, no attribute prefixes -> no ns needed
+    if let Some((XNode::Tag { decorator, .. }, _)) = tree.get(0) {
+      assert!(decorator.is_none());
     }
 
-    // Child: uses "used" prefix → should get the declaration
-    if let Some((XNode::Tag { namespaces, .. }, _)) = tree.get(1) {
-      let ns = namespaces.as_ref().unwrap();
+    // Child: uses "used" prefix -> should get the declaration
+    if let Some((
+      XNode::Tag {
+        decorator: Some(decs),
+        ..
+      },
+      _,
+    )) = tree.get(1)
+    {
+      let ns: Vec<_> = decs
+        .iter()
+        .filter_map(|d| match d {
+          XDecorator::XNamespace { sufix, .. } => Some(sufix.as_deref()),
+          _ => None,
+        })
+        .collect();
       assert_eq!(ns.len(), 1);
-      assert_eq!(&**ns[0].prefix.as_ref().unwrap(), "used");
+      assert_eq!(ns[0], Some("used"));
+    } else {
+      panic!("expected tag with decorators");
     }
   }
 
@@ -218,24 +242,34 @@ mod tests {
       XNode::Tag {
         prefix: None,
         name: "root".into(),
-        attributes: Some(vec![XAttribute {
-          prefix: Some("ns".into()),
-          local_name: "attr".into(),
-          value: "val".into(),
-        }]),
-        namespaces: Some(vec![XNamespace {
-          prefix: Some("ns".into()),
-          uri: "http://ns".into(),
-        }]),
+        decorator: Some(vec![
+          XDecorator::XNamespace {
+            sufix: Some("ns".into()),
+            value: "http://ns".into(),
+          },
+          XDecorator::XAttribute {
+            prefix: Some("ns".into()),
+            local_name: "attr".into(),
+            value: "val".into(),
+          },
+        ]),
       },
       0,
     ));
 
     VisiblyUtilizedNamespaces::new(vec![]).apply(&mut tree);
 
-    if let Some((XNode::Tag { namespaces, .. }, _)) = tree.get(0) {
-      let ns = namespaces.as_ref().unwrap();
-      assert!(ns.iter().any(|n| n.prefix.as_deref() == Some("ns")));
+    if let Some((
+      XNode::Tag {
+        decorator: Some(decs),
+        ..
+      },
+      _,
+    )) = tree.get(0)
+    {
+      assert!(decs.iter().any(
+        |d| matches!(d, XDecorator::XNamespace { sufix, .. } if sufix.as_deref() == Some("ns"))
+      ));
     }
   }
 
@@ -246,10 +280,9 @@ mod tests {
       XNode::Tag {
         prefix: None,
         name: "root".into(),
-        attributes: None,
-        namespaces: Some(vec![XNamespace {
-          prefix: Some("forced".into()),
-          uri: "http://forced".into(),
+        decorator: Some(vec![XDecorator::XNamespace {
+          sufix: Some("forced".into()),
+          value: "http://forced".into(),
         }]),
       },
       0,
@@ -257,9 +290,17 @@ mod tests {
 
     VisiblyUtilizedNamespaces::new(vec!["forced".to_string()]).apply(&mut tree);
 
-    if let Some((XNode::Tag { namespaces, .. }, _)) = tree.get(0) {
-      let ns = namespaces.as_ref().unwrap();
-      assert!(ns.iter().any(|n| n.prefix.as_deref() == Some("forced")));
+    if let Some((
+      XNode::Tag {
+        decorator: Some(decs),
+        ..
+      },
+      _,
+    )) = tree.get(0)
+    {
+      assert!(decs.iter().any(
+        |d| matches!(d, XDecorator::XNamespace { sufix, .. } if sufix.as_deref() == Some("forced"))
+      ));
     }
   }
 
@@ -270,10 +311,9 @@ mod tests {
       XNode::Tag {
         prefix: Some("ns".into()),
         name: "root".into(),
-        attributes: None,
-        namespaces: Some(vec![XNamespace {
-          prefix: Some("ns".into()),
-          uri: "http://ns".into(),
+        decorator: Some(vec![XDecorator::XNamespace {
+          sufix: Some("ns".into()),
+          value: "http://ns".into(),
         }]),
       },
       0,
@@ -282,10 +322,9 @@ mod tests {
       XNode::Tag {
         prefix: Some("ns".into()),
         name: "child".into(),
-        attributes: None,
-        namespaces: Some(vec![XNamespace {
-          prefix: Some("ns".into()),
-          uri: "http://ns".into(),
+        decorator: Some(vec![XDecorator::XNamespace {
+          sufix: Some("ns".into()),
+          value: "http://ns".into(),
         }]),
       },
       1,
@@ -294,13 +333,23 @@ mod tests {
     VisiblyUtilizedNamespaces::new(vec![]).apply(&mut tree);
 
     // Root emits ns decl
-    if let Some((XNode::Tag { namespaces, .. }, _)) = tree.get(0) {
-      let ns = namespaces.as_ref().unwrap();
-      assert_eq!(ns.len(), 1);
+    if let Some((
+      XNode::Tag {
+        decorator: Some(decs),
+        ..
+      },
+      _,
+    )) = tree.get(0)
+    {
+      let ns_count = decs
+        .iter()
+        .filter(|d| matches!(d, XDecorator::XNamespace { .. }))
+        .count();
+      assert_eq!(ns_count, 1);
     }
     // Child should NOT re-emit since output scope already has it
-    if let Some((XNode::Tag { namespaces, .. }, _)) = tree.get(1) {
-      assert!(namespaces.is_none());
+    if let Some((XNode::Tag { decorator, .. }, _)) = tree.get(1) {
+      assert!(decorator.is_none());
     }
   }
 
@@ -313,10 +362,9 @@ mod tests {
       XNode::Tag {
         prefix: None,
         name: "root".into(),
-        attributes: None,
-        namespaces: Some(vec![XNamespace {
-          prefix: Some("ns".into()),
-          uri: "http://ns".into(),
+        decorator: Some(vec![XDecorator::XNamespace {
+          sufix: Some("ns".into()),
+          value: "http://ns".into(),
         }]),
       },
       0,
@@ -325,8 +373,7 @@ mod tests {
       XNode::Tag {
         prefix: None,
         name: "mid".into(),
-        attributes: None,
-        namespaces: None,
+        decorator: None,
       },
       1,
     ));
@@ -334,28 +381,41 @@ mod tests {
       XNode::Tag {
         prefix: Some("ns".into()),
         name: "leaf".into(),
-        attributes: None,
-        namespaces: None,
+        decorator: None,
       },
       2,
     ));
 
     VisiblyUtilizedNamespaces::new(vec![]).apply(&mut tree);
 
-    // Root: doesn't use ns prefix itself → stripped
-    if let Some((XNode::Tag { namespaces, .. }, _)) = tree.get(0) {
-      assert!(namespaces.is_none());
+    // Root: doesn't use ns prefix itself -> stripped
+    if let Some((XNode::Tag { decorator, .. }, _)) = tree.get(0) {
+      assert!(decorator.is_none());
     }
-    // Mid: doesn't use any prefix → no ns
-    if let Some((XNode::Tag { namespaces, .. }, _)) = tree.get(1) {
-      assert!(namespaces.is_none());
+    // Mid: doesn't use any prefix -> no ns
+    if let Some((XNode::Tag { decorator, .. }, _)) = tree.get(1) {
+      assert!(decorator.is_none());
     }
-    // Leaf: uses "ns" prefix → should have declaration added from input scope
-    if let Some((XNode::Tag { namespaces, .. }, _)) = tree.get(2) {
-      let ns = namespaces.as_ref().unwrap();
+    // Leaf: uses "ns" prefix -> should have declaration added from input scope
+    if let Some((
+      XNode::Tag {
+        decorator: Some(decs),
+        ..
+      },
+      _,
+    )) = tree.get(2)
+    {
+      let ns: Vec<_> = decs
+        .iter()
+        .filter_map(|d| match d {
+          XDecorator::XNamespace { sufix, value } => Some((sufix.as_deref(), &**value)),
+          _ => None,
+        })
+        .collect();
       assert_eq!(ns.len(), 1);
-      assert_eq!(&**ns[0].prefix.as_ref().unwrap(), "ns");
-      assert_eq!(&*ns[0].uri, "http://ns");
+      assert_eq!(ns[0], (Some("ns"), "http://ns"));
+    } else {
+      panic!("expected tag with decorators");
     }
   }
 }
