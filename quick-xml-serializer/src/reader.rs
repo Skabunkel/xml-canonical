@@ -1,5 +1,5 @@
 use flat_tree::{
-  elements::{XAttribute, XNamespace, XNode},
+  elements::{XDecorator, XNode},
   flat_tree::FlatTree,
 };
 use quick_xml::{Reader, events::Event};
@@ -91,8 +91,7 @@ fn parse_tag(
   let name_str = std::str::from_utf8(name_qname.as_ref())?;
   let (prefix, local_name) = split_prefix(name_str);
 
-  let mut attributes: Vec<XAttribute> = Vec::new();
-  let mut namespaces: Vec<XNamespace> = Vec::new();
+  let mut decorators: Vec<XDecorator> = Vec::new();
 
   for attr_result in start.attributes() {
     let attr = attr_result?;
@@ -101,18 +100,18 @@ fn parse_tag(
     let value: &str = &value;
 
     if key == "xmlns" {
-      namespaces.push(XNamespace {
-        prefix: None,
-        uri: value.into(),
+      decorators.push(XDecorator::XNamespace {
+        sufix: None,
+        value: value.into(),
       });
     } else if let Some(ns_prefix) = key.strip_prefix("xmlns:") {
-      namespaces.push(XNamespace {
-        prefix: Some(ns_prefix.into()),
-        uri: value.into(),
+      decorators.push(XDecorator::XNamespace {
+        sufix: Some(ns_prefix.into()),
+        value: value.into(),
       });
     } else {
       let (attr_prefix, attr_local) = split_prefix(key);
-      attributes.push(XAttribute {
+      decorators.push(XDecorator::XAttribute {
         prefix: attr_prefix.map(Into::into),
         local_name: attr_local.into(),
         value: value.into(),
@@ -123,15 +122,10 @@ fn parse_tag(
   Ok(XNode::Tag {
     prefix: prefix.map(Into::into),
     name: local_name.into(),
-    attributes: if attributes.is_empty() {
+    decorator: if decorators.is_empty() {
       None
     } else {
-      Some(attributes)
-    },
-    namespaces: if namespaces.is_empty() {
-      None
-    } else {
-      Some(namespaces)
+      Some(decorators)
     },
   })
 }

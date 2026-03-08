@@ -32,18 +32,10 @@ pub fn write_xml<W: Write>(tree: &FlatTree, writer: &mut W) -> Result<(), io::Er
         XNode::Tag {
           prefix,
           name,
-          namespaces,
-          attributes,
+          decorator,
         } => {
           let has_children = tree.has_children(index).unwrap_or(false);
-          write_tag(
-            has_children,
-            prefix,
-            name,
-            namespaces,
-            attributes,
-            &mut writer,
-          );
+          write_tag(has_children, prefix, name, decorator, &mut writer);
 
           if has_children {
             open_tags.push((index, depth));
@@ -87,8 +79,7 @@ fn write_closing_tag<W: Write>(node: &XNode, writer: &mut Writer<W>) {
   if let XNode::Tag {
     prefix,
     name,
-    attributes: _,
-    namespaces: _,
+    decorator: _,
   } = node
   {
     let name = make_qname(prefix, name);
@@ -100,27 +91,29 @@ fn write_tag<W: Write>(
   has_children: bool,
   prefix: &Option<Box<str>>,
   name: &str,
-  namespaces: &Option<Vec<flat_tree::elements::XNamespace>>,
-  attributes: &Option<Vec<flat_tree::elements::XAttribute>>,
+  decorators: &Option<Vec<flat_tree::elements::XDecorator>>,
   writer: &mut Writer<&mut W>,
 ) {
   let qname = make_qname(prefix, name);
 
   let mut element = BytesStart::new(qname);
 
-  if let Some(namespaces) = namespaces {
-    for ns in namespaces {
-      match &ns.prefix {
-        Some(p) => element.push_attribute((format!("xmlns:{p}").as_str(), &*ns.uri)),
-        None => element.push_attribute(("xmlns", &*ns.uri)),
+  if let Some(decorators) = decorators {
+    for decorator in decorators {
+      match decorator {
+        flat_tree::elements::XDecorator::XAttribute {
+          prefix,
+          local_name,
+          value,
+        } => {
+          let name = make_qname(&prefix, &local_name);
+          element.push_attribute((name.as_str(), value.as_ref()));
+        }
+        flat_tree::elements::XDecorator::XNamespace { sufix, value } => match sufix {
+          Some(p) => element.push_attribute((format!("xmlns:{p}").as_str(), value.as_ref())),
+          None => element.push_attribute(("xmlns", value.as_ref())),
+        },
       }
-    }
-  }
-
-  if let Some(attributes) = attributes {
-    for att in attributes {
-      let name = make_qname(&att.prefix, &att.local_name);
-      element.push_attribute((name.as_str(), &*att.value));
     }
   }
 

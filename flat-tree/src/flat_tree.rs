@@ -366,8 +366,7 @@ mod tests {
     // <root>
     tree.push((
       XNode::Tag {
-        namespaces: None,
-        attributes: None,
+        decorator: None,
         prefix: None,
         name: "root".into(),
       },
@@ -378,8 +377,7 @@ mod tests {
     // <node>
     tree.push((
       XNode::Tag {
-        namespaces: None,
-        attributes: None,
+        decorator: None,
         prefix: None,
         name: "node".into(),
       },
@@ -391,8 +389,7 @@ mod tests {
     // <node>
     tree.push((
       XNode::Tag {
-        namespaces: None,
-        attributes: None,
+        decorator: None,
         prefix: None,
         name: "node".into(),
       },
@@ -404,8 +401,7 @@ mod tests {
     // <t1>text2</t1>
     tree.push((
       XNode::Tag {
-        namespaces: None,
-        attributes: None,
+        decorator: None,
         prefix: None,
         name: "t1".into(),
       },
@@ -417,8 +413,7 @@ mod tests {
     //<t2><t3>text3</t3></t2></root>
     tree.push((
       XNode::Tag {
-        namespaces: None,
-        attributes: None,
+        decorator: None,
         prefix: None,
         name: "t2".into(),
       },
@@ -427,8 +422,7 @@ mod tests {
 
     tree.push((
       XNode::Tag {
-        namespaces: None,
-        attributes: None,
+        decorator: None,
         prefix: None,
         name: "t3".into(),
       },

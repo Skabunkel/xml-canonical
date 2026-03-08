@@ -1,25 +1,26 @@
 //! Defines elements that are stored in the tree.
 
-/// # Attribute
-/// This represents a singular attribute definition.<br/>
-/// Document structure: ([`XAttribute::prefix`]:)[`XAttribute::local_name`]="[`XAttribute::value`]"
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct XAttribute {
-  pub prefix: Option<Box<str>>,
-  pub local_name: Box<str>,
-  pub value: Box<str>,
-}
+#[derive(Debug, Clone, PartialEq)]
+pub enum XDecorator {
+  /// # Attribute
+  /// This represents a singular attribute definition.<br/>
+  /// Document structure: ([`XAttribute::prefix`]:)[`XAttribute::local_name`]="[`XAttribute::value`]"
+  XAttribute {
+    prefix: Option<Box<str>>,
+    local_name: Box<str>,
+    value: Box<str>,
+  },
 
-/// # Namespace
-/// This represents a single namespace definition.<br/>
-/// Document structure: xmlns(:[`XNamespace::prefix`])="[`XNamespace::uri`]"
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct XNamespace {
-  /// the prefix of the namespace.
-  /// the prefix does not include "xmlns:"<br/>
-  /// The prefix maybe none in which case its the default namespace.
-  pub prefix: Option<Box<str>>,
-  pub uri: Box<str>,
+  /// # Namespace
+  /// This represents a single namespace definition.<br/>
+  /// Document structure: xmlns(:[`XNamespace::prefix`])="[`XNamespace::uri`]"
+  XNamespace {
+    /// the sufix of the namespace.
+    /// the sufix does not include "xmlns:"<br/>
+    /// The sufix maybe none in which case its the default namespace.
+    sufix: Option<Box<str>>,
+    value: Box<str>,
+  },
 }
 
 /// # XML Elements
@@ -29,8 +30,7 @@ pub enum XNode {
   Tag {
     prefix: Option<Box<str>>,
     name: Box<str>,
-    attributes: Option<Vec<XAttribute>>,
-    namespaces: Option<Vec<XNamespace>>,
+    decorator: Option<Vec<XDecorator>>,
   },
   Text(Box<str>),
   Comment(Box<str>),
