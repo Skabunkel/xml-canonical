@@ -22,7 +22,7 @@ pub fn write_xml<W: Write>(tree: &FlatTree, writer: &mut W) -> Result<(), io::Er
         if open_depth >= depth {
           let (node_index, _) = open_tags.pop().unwrap();
           let (tag, _) = tree.get(node_index).unwrap();
-          write_closing_tag(tag, &mut writer);
+          write_closing_tag(tag, &mut writer)?;
         } else {
           break;
         }
@@ -35,7 +35,7 @@ pub fn write_xml<W: Write>(tree: &FlatTree, writer: &mut W) -> Result<(), io::Er
           decorator,
         } => {
           let has_children = tree.has_children(index).unwrap_or(false);
-          write_tag(has_children, prefix, name, decorator, &mut writer);
+          write_tag(has_children, prefix, name, decorator, &mut writer)?;
 
           if has_children {
             open_tags.push((index, depth));
@@ -69,22 +69,18 @@ pub fn write_xml<W: Write>(tree: &FlatTree, writer: &mut W) -> Result<(), io::Er
 
   while let Some((node_index, _)) = open_tags.pop() {
     let (tag, _) = tree.get(node_index).unwrap();
-    write_closing_tag(tag, &mut writer);
+    write_closing_tag(tag, &mut writer)?;
   }
 
   Ok(())
 }
 
-fn write_closing_tag<W: Write>(node: &XNode, writer: &mut Writer<W>) {
-  if let XNode::Tag {
-    prefix,
-    name,
-    decorator: _,
-  } = node
-  {
+fn write_closing_tag<W: Write>(node: &XNode, writer: &mut Writer<W>) -> Result<(), io::Error> {
+  if let XNode::Tag { prefix, name, .. } = node {
     let name = make_qname(prefix, name);
-    let _ = writer.write_event(Event::End(quick_xml::events::BytesEnd::new(name)));
+    writer.write_event(Event::End(quick_xml::events::BytesEnd::new(name)))?;
   }
+  Ok(())
 }
 
 fn write_tag<W: Write>(
@@ -93,7 +89,7 @@ fn write_tag<W: Write>(
   name: &str,
   decorators: &Option<Vec<flat_tree::elements::XDecorator>>,
   writer: &mut Writer<&mut W>,
-) {
+) -> Result<(), io::Error> {
   let qname = make_qname(prefix, name);
 
   let mut element = BytesStart::new(qname);
@@ -117,10 +113,11 @@ fn write_tag<W: Write>(
     }
   }
 
-  let _ = match has_children {
-    true => writer.write_event(Event::Start(element)),
-    false => writer.write_event(Event::Empty(element)),
+  match has_children {
+    true => writer.write_event(Event::Start(element))?,
+    false => writer.write_event(Event::Empty(element))?,
   };
+  Ok(())
 }
 
 fn make_qname(prefix: &Option<Box<str>>, name: &str) -> String {

@@ -4,7 +4,7 @@
 pub enum XDecorator {
   /// # Attribute
   /// This represents a singular attribute definition.<br/>
-  /// Document structure: ([`XAttribute::prefix`]:)[`XAttribute::local_name`]="[`XAttribute::value`]"
+  /// Document structure: ([`XDecorator::XAttribute::prefix`]:)[`XDecorator::XAttribute::local_name`]="[`XDecorator::XAttribute::value`]"
   XAttribute {
     prefix: Option<Box<str>>,
     local_name: Box<str>,
@@ -13,7 +13,7 @@ pub enum XDecorator {
 
   /// # Namespace
   /// This represents a single namespace definition.<br/>
-  /// Document structure: xmlns(:[`XNamespace::prefix`])="[`XNamespace::uri`]"
+  /// Document structure: xmlns(:[`XDecorator::XNamespace::sufix`])="[`XDecorator::XNamespace::value`]"
   XNamespace {
     /// the sufix of the namespace.
     /// the sufix does not include "xmlns:"<br/>

@@ -80,15 +80,13 @@ impl FlatTree {
     true
   }
 
-  /// Removes at node index.<br/>
+  /// Removes at node index.
   pub fn remove(&mut self, index: usize) -> Option<FlatNode> {
-    if index > self.nodes.len() - 1 {
+    if index >= self.nodes.len() {
       return None;
     }
-
     let node = self.nodes.remove(index);
     let depth = self.depth.remove(index);
-
     Some((node, depth))
   }
 
@@ -97,22 +95,14 @@ impl FlatTree {
   }
 
   pub fn get(&self, index: usize) -> Option<FlatNodeRef<'_>> {
-    if self.nodes.is_empty() {
-      return None;
-    }
-    let depth = self.depth.get(index)?;
     let node = self.nodes.get(index)?;
-
+    let depth = self.depth.get(index)?;
     Some((node, depth))
   }
 
   pub fn get_mut(&mut self, index: usize) -> Option<FlatNodeMutRef<'_>> {
-    if self.nodes.is_empty() {
-      return None;
-    }
-    let depth = self.depth.get_mut(index)?;
     let node = self.nodes.get_mut(index)?;
-
+    let depth = self.depth.get_mut(index)?;
     Some((node, depth))
   }
 
@@ -120,16 +110,11 @@ impl FlatTree {
     self.nodes.len()
   }
 
-  /// None if the current node does not exist.<br/>
-  /// True if it does and false if it dosnt or the its the last node.
+  /// Returns `None` if `index` is out of bounds, `Some(true)` if the next
+  /// node is deeper (i.e. a child), `Some(false)` otherwise.
   pub fn has_children(&self, index: usize) -> Option<bool> {
     let depth = self.depth.get(index)?;
-    let neigbor_depth = self.depth.get(index + 1);
-
-    match neigbor_depth {
-      Some(ndepth) => Some(ndepth > depth),
-      None => Some(false),
-    }
+    Some(self.depth.get(index + 1).is_some_and(|d| d > depth))
   }
 }
 

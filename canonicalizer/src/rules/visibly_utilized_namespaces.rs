@@ -1,4 +1,4 @@
-use crate::canonicalizer::Rule;
+use crate::{canonicalizer::Rule, scope::build_namespace_scopes};
 use flat_tree::{
   elements::{XDecorator, XNode},
   flat_tree::{Depth, FlatTree},
@@ -29,8 +29,8 @@ impl VisiblyUtilizedNamespaces {
 
 impl Rule for VisiblyUtilizedNamespaces {
   fn apply(&self, tree: &mut FlatTree) {
-    // First pass: build input scope map (prefix->URI at each Tag node index)
-    let input_scopes = build_input_scopes(tree);
+    // First pass: build input scope map using shared utility
+    let input_scopes = build_namespace_scopes(tree);
 
     // Second pass: process each tag, keeping only visibly utilized ns decls
     // and adding missing ones from input scope
@@ -99,8 +99,7 @@ impl Rule for VisiblyUtilizedNamespaces {
             // Check if already in output scope with same URI
             let already_output = output_scope
               .get(prefix_key)
-              .map(|u| u == uri)
-              .unwrap_or(false);
+              .is_some_and(|u| u == uri);
 
             if !already_output {
               new_ns.push(XDecorator::XNamespace {
@@ -127,49 +126,6 @@ impl Rule for VisiblyUtilizedNamespaces {
       }
     }
   }
-}
-
-/// Build input scope map: for each node index, the full prefix->URI bindings
-/// inherited from ancestors plus the node's own declarations.
-fn build_input_scopes(tree: &FlatTree) -> Vec<HashMap<Option<String>, String>> {
-  let len = tree.len();
-  let mut result: Vec<HashMap<Option<String>, String>> = Vec::with_capacity(len);
-
-  let mut scope_stack: Vec<(Depth, HashMap<Option<String>, String>)> = Vec::new();
-  let mut current: HashMap<Option<String>, String> = HashMap::new();
-
-  for i in 0..len {
-    if let Some((node, &depth)) = tree.get(i) {
-      // Pop scopes no longer active
-      while let Some(&(d, _)) = scope_stack.last() {
-        if d >= depth {
-          let (_, parent) = scope_stack.pop().unwrap();
-          current = parent;
-        } else {
-          break;
-        }
-      }
-
-      if let XNode::Tag { decorator, .. } = node {
-        let parent = current.clone();
-        if let Some(decs) = decorator {
-          for dec in decs {
-            if let XDecorator::XNamespace { sufix, value } = dec {
-              let key = sufix.as_deref().map(|s| s.to_string());
-              current.insert(key, value.to_string());
-            }
-          }
-        }
-        scope_stack.push((depth, parent));
-      }
-
-      result.push(current.clone());
-    } else {
-      result.push(HashMap::new());
-    }
-  }
-
-  result
 }
 
 #[cfg(test)]

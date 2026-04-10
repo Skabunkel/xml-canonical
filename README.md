@@ -62,6 +62,11 @@ In an ideal world i would build the rule execution flow of the Canonicolizer at 
 * [ ] Get good at rust documentation
 * [X] Change XNamespace into an attribute, right now we cant reproduce out of order namespace declarations. eg `<root spoon="asd" xmlns="asds">`
 
+# Xml-rs
+
+It seems xml-rs is going to be hard to implement since it splits out 
+
+
 # Licensing
 
 This library is dual-licensed under MIT and Apache 2.0, at your preference.

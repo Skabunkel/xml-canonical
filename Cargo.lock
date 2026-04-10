@@ -37,24 +37,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "xml"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8aa498d22c9bbaf482329839bc5620c46be275a19a812e9a22a2b07529a642a"
-
-[[package]]
 name = "xml-canonical"
 version = "0.1.0"
 dependencies = [
  "canonicalizer",
  "flat-tree",
  "quick-xml-serializer",
-]
-
-[[package]]
-name = "xml-rs-seralizer"
-version = "0.0.0"
-dependencies = [
- "flat-tree",
- "xml",
 ]

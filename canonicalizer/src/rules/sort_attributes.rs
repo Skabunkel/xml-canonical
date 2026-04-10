@@ -1,20 +1,19 @@
-use crate::canonicalizer::Rule;
+use crate::{canonicalizer::Rule, scope::build_namespace_scopes};
 use flat_tree::{
   elements::{XDecorator, XNode},
-  flat_tree::{Depth, FlatTree},
+  flat_tree::FlatTree,
 };
-use std::collections::HashMap;
 
 /// Sort attributes by (namespace URI, local_name).
 /// Unprefixed attributes sort first (empty namespace URI).
-/// Uses scope tracking to resolve attribute prefixes to URIs.
+/// Uses shared scope tracking to resolve attribute prefixes to URIs.
 pub struct SortAttributes;
 
 impl Rule for SortAttributes {
   fn apply(&self, tree: &mut FlatTree) {
-    let scope_map = build_scope_map(tree);
+    let scopes = build_namespace_scopes(tree);
 
-    for (i, scope) in scope_map.iter().enumerate() {
+    for (i, scope) in scopes.iter().enumerate() {
       if let Some((
         XNode::Tag {
           decorator: Some(decs),
@@ -44,77 +43,33 @@ impl Rule for SortAttributes {
             _ => unreachable!(),
           };
 
+          // Resolve prefix -> URI via the shared scope map (keyed by Option<String>)
           let a_uri = a_prefix
             .as_deref()
-            .and_then(|p| scope.get(p))
+            .and_then(|p| scope.get(&Some(p.to_string())))
             .map(|s| s.as_str())
             .unwrap_or("");
           let b_uri = b_prefix
             .as_deref()
-            .and_then(|p| scope.get(p))
+            .and_then(|p| scope.get(&Some(p.to_string())))
             .map(|s| s.as_str())
             .unwrap_or("");
           a_uri.cmp(b_uri).then_with(|| a_local.cmp(b_local))
         });
 
-        // Apply the sorted order by rebuilding the vec
-        let sorted_attrs: Vec<XDecorator> =
+        // Apply sorted order: one clone to extract, then swap back (avoids second clone)
+        let mut sorted_attrs: Vec<XDecorator> =
           attr_indices.iter().map(|&idx| decs[idx].clone()).collect();
         let mut sorted_idx = 0;
         for d in decs.iter_mut() {
           if matches!(d, XDecorator::XAttribute { .. }) {
-            *d = sorted_attrs[sorted_idx].clone();
+            std::mem::swap(d, &mut sorted_attrs[sorted_idx]);
             sorted_idx += 1;
           }
         }
       }
     }
   }
-}
-
-/// For each node index, compute the active prefix->URI namespace scope.
-fn build_scope_map(tree: &FlatTree) -> Vec<HashMap<String, String>> {
-  let len = tree.len();
-  let mut result: Vec<HashMap<String, String>> = Vec::with_capacity(len);
-
-  let mut scope_stack: Vec<(Depth, HashMap<String, String>)> = Vec::new();
-  let mut current_scope: HashMap<String, String> = HashMap::new();
-
-  for i in 0..len {
-    if let Some((node, &depth)) = tree.get(i) {
-      // Pop scopes that are no longer active
-      while let Some(&(d, _)) = scope_stack.last() {
-        if d >= depth {
-          let (_, parent_scope) = scope_stack.pop().unwrap();
-          current_scope = parent_scope;
-        } else {
-          break;
-        }
-      }
-
-      if let XNode::Tag { decorator, .. } = node {
-        let parent_scope = current_scope.clone();
-        if let Some(decs) = decorator {
-          for dec in decs {
-            if let XDecorator::XNamespace {
-              sufix: Some(prefix),
-              value,
-            } = dec
-            {
-              current_scope.insert(prefix.to_string(), value.to_string());
-            }
-          }
-        }
-        scope_stack.push((depth, parent_scope));
-      }
-
-      result.push(current_scope.clone());
-    } else {
-      result.push(HashMap::new());
-    }
-  }
-
-  result
 }
 
 #[cfg(test)]

@@ -40,7 +40,7 @@ impl Rule for StripRedundantNamespaces {
             XDecorator::XNamespace { sufix, value } => {
               let key = sufix.as_deref().map(|s| s.to_string());
               let uri = value.to_string();
-              let dominated = current_scope.get(&key).map(|u| u == &uri).unwrap_or(false);
+              let dominated = current_scope.get(&key).is_some_and(|u| u == &uri);
               // Update current scope regardless
               current_scope.insert(key, uri);
               !dominated

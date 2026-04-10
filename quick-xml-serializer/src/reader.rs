@@ -1,6 +1,6 @@
 use flat_tree::{
   elements::{XDecorator, XNode},
-  flat_tree::FlatTree,
+  flat_tree::{Depth, FlatTree},
 };
 use quick_xml::{Reader, events::Event};
 
@@ -9,7 +9,7 @@ pub fn read_xml<R: std::io::BufRead>(
   tree: &mut FlatTree,
 ) -> Result<(), Box<dyn std::error::Error>> {
   let mut reader = Reader::from_reader(source);
-  let mut depth: u8 = 0;
+  let mut depth: Depth = 0;
   let mut buf = Vec::new();
 
   loop {

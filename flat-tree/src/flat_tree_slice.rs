@@ -41,12 +41,8 @@ impl FlatTreeSlice<'_> {
   }
 
   pub fn get(&self, index: usize) -> Option<FlatNodeRef<'_>> {
-    if self.nodes.is_empty() {
-      return None;
-    }
-    let depth = self.depth.get(index)?;
     let node = self.nodes.get(index)?;
-
+    let depth = self.depth.get(index)?;
     Some((node, depth))
   }
 
@@ -54,16 +50,11 @@ impl FlatTreeSlice<'_> {
     self.nodes.len()
   }
 
-  /// None if the current node does not exist.<br/>
-  ///
+  /// Returns `None` if `index` is out of bounds, `Some(true)` if the next
+  /// node is deeper (i.e. a child), `Some(false)` otherwise.
   pub fn has_children(&self, index: usize) -> Option<bool> {
     let depth = self.depth.get(index)?;
-    let neigbor_depth = self.depth.get(index + 1);
-
-    match neigbor_depth {
-      Some(ndepth) => Some(ndepth > depth),
-      None => Some(false),
-    }
+    Some(self.depth.get(index + 1).is_some_and(|d| d > depth))
   }
 }
 

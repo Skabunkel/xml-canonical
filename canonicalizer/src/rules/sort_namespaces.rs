@@ -35,12 +35,12 @@ impl Rule for SortNamespaces {
           }
         });
 
-        // Apply sorted order
-        let sorted_ns: Vec<XDecorator> = ns_indices.iter().map(|&idx| decs[idx].clone()).collect();
+        // Apply sorted order: one clone to extract, then swap back (avoids second clone)
+        let mut sorted_ns: Vec<XDecorator> = ns_indices.iter().map(|&idx| decs[idx].clone()).collect();
         let mut sorted_idx = 0;
         for d in decs.iter_mut() {
           if matches!(d, XDecorator::XNamespace { .. }) {
-            *d = sorted_ns[sorted_idx].clone();
+            std::mem::swap(d, &mut sorted_ns[sorted_idx]);
             sorted_idx += 1;
           }
         }
